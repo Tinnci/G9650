@@ -50,8 +50,8 @@ Added:
 Default build behavior:
 
 - Docker image: `tinnci/sdm845-mainline-kernel-builder:ubuntu24.04`
-- Docker image id: `sha256:5a062f61f63f0d1026de8b5485de5b27535c718ff755c7a911838dc6e8cb3739`
-- Docker image size: `359451607` bytes
+- Docker image id: `sha256:2aa7b9ebf945fa8a603c37a6cb4fc7897679e94e8f474cdbb87696195daf6cdf`
+- Docker image size: `379067975` bytes
 - branch: `6.17-wip/starqltechn_latest_patches`
 - clone depth: `80`
 - config flow: `defconfig`, merge `arch/arm64/configs/sdm845.config`,
@@ -72,6 +72,8 @@ Verified builder tools:
 - pahole: `v1.25`
 - make: `GNU Make 4.3`
 - python: `3.12.3`
+- xxd: `/usr/bin/xxd`
+- swig: `/usr/bin/swig`
 
 Dry run:
 

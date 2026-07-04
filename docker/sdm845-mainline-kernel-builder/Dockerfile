@@ -25,10 +25,15 @@ RUN apt-get update && \
         perl \
         pkg-config \
         python3 \
+        python3-dev \
+        python3-setuptools \
         rsync \
+        swig \
+        uuid-dev \
+        libgnutls28-dev \
+        xxd \
         xz-utils \
         zstd && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /workspace
-
