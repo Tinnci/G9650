@@ -1,0 +1,32 @@
+{
+  "name": "dsankouski-sdm845-linux-next-mainline",
+  "checked_at": "2026-07-04T00:00:00+08:00",
+  "device": "SM-G9650 star2qltechn/starqltechn",
+  "repo": "https://gitlab.com/dsankouski/sdm845-linux-next.git",
+  "default_branch": "6.17-wip/starqltechn_latest_patches",
+  "default_head": "f1b20714332646073d4f54190c271917c6da32fa",
+  "default_head_title": "sdm845.config: enable max98512 downstream codec back because fixed",
+  "fallback_branch": "starqltechn_for_xda",
+  "fallback_head": "b3656a6c63a6fb583185f52b8e58d83dabeef427",
+  "build": {
+    "docker_image": "tinnci/sdm845-mainline-kernel-builder:ubuntu24.04",
+    "dockerfile": "docker/sdm845-mainline-kernel-builder/Dockerfile",
+    "script": "scripts/kernel/build-mainline-sdm845-kernel.sh",
+    "config_flow": [
+      "defconfig",
+      "merge arch/arm64/configs/sdm845.config",
+      "olddefconfig"
+    ],
+    "targets": [
+      "Image.gz",
+      "dtbs"
+    ],
+    "expected_dtb": "arch/arm64/boot/dts/qcom/sdm845-samsung-starqltechn.dtb"
+  },
+  "notes": [
+    "Use the 6.17 WIP branch as the modern compile target.",
+    "Keep full kernel checkouts and build output outside this git repo.",
+    "BCM4361 Wi-Fi and Broadcom Bluetooth remain a separate narrow porting track."
+  ]
+}
+

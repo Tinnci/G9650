@@ -1,0 +1,30 @@
+# Keep this repo as a lightweight control repo.
+# Kernel source trees, build outputs, and large artifacts live outside git.
+
+.DS_Store
+
+analysis/*
+!analysis/.gitkeep
+
+kernel-src/
+kernel-source/
+out/
+build/
+build-logs/
+
+*.log
+*.tmp
+
+*.img
+*.tar
+*.tar.*
+*.zip
+*.dtb
+*.dtbo
+Image
+Image.gz
+Image.gz-dtb
+vmlinux
+modules.order
+Module.symvers
+
