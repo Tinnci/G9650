@@ -56,7 +56,7 @@ Default build behavior:
 - clone depth: `80`
 - config flow: `defconfig`, merge `arch/arm64/configs/sdm845.config`,
   then `olddefconfig`
-- default targets: `Image.gz qcom/sdm845-samsung-starqltechn.dtb`
+- default targets: `Image.gz qcom/sdm845-samsung-star2qltechn.dtb`
 - full DTB target: set `BUILD_ALL_DTBS=1` to build `Image.gz dtbs`
 - module target: set `BUILD_MODULES=1` to append `modules`
 - `CONFIG_LOCALVERSION_AUTO` is disabled by the wrapper after config merge for
@@ -121,6 +121,9 @@ scripts/kernel/build-mainline-sdm845-kernel.sh
 
 ## First successful build
 
+This first build is preserved as history. It used the upstream `starqltechn`
+target and is not the preferred G9650 recovery test target anymore.
+
 Build record:
 
 - `analysis/mainline-kernel-build-20260704-070427`
@@ -174,6 +177,29 @@ Important config observations from the first build:
 
 This means the modern mainline branch now compiles for the device target, but it
 does not yet include a working Broadcom BCM4361 Wi-Fi driver path.
+
+## Current G9650 debug build
+
+The current default target is the G9650 `star2qltechn` debug DTB:
+
+- build record: `analysis/mainline-kernel-build-20260704-113151`
+- output root: `/Volumes/gts7-android-build/android/kernel-builds/sdm845/out-mainline-star2qltechn`
+- target DTB: `qcom/sdm845-samsung-star2qltechn.dtb`
+
+Artifacts:
+
+- `arch/arm64/boot/Image.gz`
+  - size: `15150776`
+  - sha256: `806b7c9d2bdae39459e2b2d52af0da33b5e1d2db7f7b12cf54143f4717a2c891`
+- `arch/arm64/boot/Image`
+  - size: `40614400`
+  - sha256: `70df6db4a5e40c463675114cfea262c450d46616ab113f49925cb406b6691eea`
+- `arch/arm64/boot/dts/qcom/sdm845-samsung-star2qltechn.dtb`
+  - size: `113242`
+  - sha256: `98c8a7a2ad4f13b334f716cf66c5596b3d01d44662970f7296f0d3f261242d22`
+
+Use this build for the next recovery evidence test. See
+`docs/mainline-star2qltechn-recovery-debug-build-20260704.md`.
 
 ## Wireless follow-up
 

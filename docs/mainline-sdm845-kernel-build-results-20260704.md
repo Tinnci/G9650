@@ -1,16 +1,17 @@
 # Mainline SDM845 Kernel Build Results - 2026-07-04
 
-This records the first successful mainline SDM845 kernel compile for the G9650
-workspace.
+This records the current successful mainline SDM845 kernel compile path for the
+G9650 workspace. The original fast target used `starqltechn`; the current default
+uses the G9650 `star2qltechn` debug DTB.
 
 ## Build identity
 
-- device target: Samsung Galaxy S9+/SM-G9650 `starqltechn`
+- device target: Samsung Galaxy S9+/SM-G9650 `star2qltechn`
 - upstream repo: `https://gitlab.com/dsankouski/sdm845-linux-next.git`
 - branch: `6.17-wip/starqltechn_latest_patches`
 - head: `f1b20714332646073d4f54190c271917c6da32fa`
 - head title: `sdm845.config: enable max98512 downstream codec back because fixed`
-- build record: `analysis/mainline-kernel-build-20260704-070427`
+- build record: `analysis/mainline-kernel-build-20260704-113151`
 
 ## Builder
 
@@ -31,7 +32,7 @@ Verified tool versions:
 ## Command
 
 ```sh
-CLONE_KERNEL=1 RUN_DOCKER=1 scripts/kernel/build-mainline-sdm845-kernel.sh
+RUN_DOCKER=1 scripts/kernel/build-mainline-sdm845-kernel.sh
 ```
 
 The first successful run used:
@@ -39,7 +40,7 @@ The first successful run used:
 - `defconfig`
 - merge `arch/arm64/configs/sdm845.config`
 - `olddefconfig`
-- targets: `Image.gz dtbs`
+- targets: `Image.gz qcom/sdm845-samsung-star2qltechn.dtb`
 
 The wrapper now defaults to the faster G9650 path:
 
@@ -50,7 +51,7 @@ RUN_DOCKER=1 scripts/kernel/build-mainline-sdm845-kernel.sh
 Default targets:
 
 - `Image.gz`
-- `qcom/sdm845-samsung-starqltechn.dtb`
+- `qcom/sdm845-samsung-star2qltechn.dtb`
 
 Use this when the full DTB set is needed:
 
@@ -62,33 +63,31 @@ BUILD_ALL_DTBS=1 RUN_DOCKER=1 scripts/kernel/build-mainline-sdm845-kernel.sh
 
 Output root:
 
-- `/Volumes/gts7-android-build/android/kernel-builds/sdm845/out-mainline-starqltechn`
+- `/Volumes/gts7-android-build/android/kernel-builds/sdm845/out-mainline-star2qltechn`
 
 Artifacts:
 
 | Artifact | Size | SHA256 |
 | --- | ---: | --- |
-| `arch/arm64/boot/Image.gz` | `15150013` | `a6afc0b24a1b01f7a239ede43054ecf645404d3c5e795e899f93f0402ce7f8e0` |
-| `arch/arm64/boot/Image` | `40614400` | `886102905a02f604612cb42fb4d5829fab115f86d5103d3f62465d57d137318a` |
-| `arch/arm64/boot/dts/qcom/sdm845-samsung-starqltechn.dtb` | `112014` | `0911308a1ae8b3096875178f8685ea25f7da2d7aed949f5a7fc27ccfd1e09301` |
+| `arch/arm64/boot/Image.gz` | `15150776` | `806b7c9d2bdae39459e2b2d52af0da33b5e1d2db7f7b12cf54143f4717a2c891` |
+| `arch/arm64/boot/Image` | `40614400` | `70df6db4a5e40c463675114cfea262c450d46616ab113f49925cb406b6691eea` |
+| `arch/arm64/boot/dts/qcom/sdm845-samsung-star2qltechn.dtb` | `113242` | `98c8a7a2ad4f13b334f716cf66c5596b3d01d44662970f7296f0d3f261242d22` |
 
 ## Log summary
 
-- `build.log`: `5040` lines
+- `build.log`: `35` lines
 - `merge-config.log`: `3701` lines
-- generated DTB list: `351` files
-- warnings: `6`
+- generated DTB list: `1` file
+- warnings: `0`
 - errors: `0`
 - fatal errors: `0`
 
-Warnings were limited to unused variables in panel drivers:
-
-- `drivers/gpu/drm/panel/panel-lg-sw43408.c`
-- `drivers/gpu/drm/panel/panel-samsung-s6e3ha8.c`
+No `warning:`, `error:`, or `fatal:` lines were found in the final incremental
+build logs.
 
 ## Compile signals
 
-The build generated `sdm845-samsung-starqltechn.dtb` and compiled the expected
+The build generated `sdm845-samsung-star2qltechn.dtb` and compiled the expected
 support areas for a first mainline bring-up pass:
 
 - Qualcomm PCIe host: `CONFIG_PCIE_QCOM=y`
@@ -107,7 +106,8 @@ The build is not yet a wireless fix.
 Observed config:
 
 - `CONFIG_WLAN_VENDOR_BROADCOM=y`
-- `CONFIG_BRCMFMAC` is not set
+- `CONFIG_BRCMFMAC=m`
+- `CONFIG_BRCMFMAC_PCIE=y`
 - `CONFIG_BT_BCM=m`
 - `CONFIG_BT_HCIUART=m`
 - `CONFIG_BT_HCIUART_BCM=y`
@@ -117,20 +117,15 @@ Interpretation:
 
 - The PCIe host controller path exists.
 - The Broadcom Bluetooth UART path exists at the generic driver level.
-- The Broadcom BCM4361 Wi-Fi path is still missing because no usable Broadcom
-  Wi-Fi driver is enabled for this device.
-- The device tree still needs the narrow Samsung downstream comparison for
-  WLAN enable, host-wake, PCIe RC0 expectations, BT reset/wake/bluesleep GPIOs,
-  and firmware packaging.
+- The current patch enables a first `brcmfmac` PCIe binding attempt for the live
+  `14e4:441f` BCM4361 endpoint.
+- Firmware/NVRAM packaging is still not solved in this repo.
+- Broadcom Bluetooth board modeling is still deferred until the recovery/kernel
+  entry problem is understood.
 
 ## Next step
 
-Use this successful compile as the baseline for a narrow wireless port:
-
-- compare mainline `arch/arm64/boot/dts/qcom/sdm845-samsung-starqltechn.dts`
-  with Samsung downstream `sdm845-sec-star2qlte-chn-r04.dts`
-- add only the board-level Wi-Fi/BT nodes and GPIOs that are defensible from
-  downstream and live-device evidence
-- keep build validation on the fast default target
-- only move to boot testing after the DTB delta is small, reviewable, and
-  traceable to downstream or live hardware evidence
+Use `docs/mainline-star2qltechn-recovery-debug-build-20260704.md` as the current
+boot-test plan. The immediate test is recovery entry evidence, not Wi-Fi success:
+pack `Image.gz + sdm845-samsung-star2qltechn.dtb`, boot/flash recovery, then
+check whether pstore captures any mainline 6.17 log.

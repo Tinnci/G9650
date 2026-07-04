@@ -1,7 +1,8 @@
-# Mainline BCM4361 PCIe Wi-Fi Bring-Up - 2026-07-04
+# Mainline BCM4361 PCIe Wi-Fi and star2qltechn Bring-Up - 2026-07-04
 
 This records the first narrow mainline bring-up patch for the G9650 Broadcom
-BCM4361 Wi-Fi path.
+BCM4361 Wi-Fi path. The same patch now also carries the G9650 `star2qltechn`
+debug DTB needed before another recovery boot test.
 
 ## Scope
 
@@ -12,6 +13,9 @@ Goal:
 - use the selected dsankouski 6.17 WIP mainline branch as the base
 - add the smallest traceable Wi-Fi/PCIe delta needed for the device to enumerate
   the Broadcom BCM4361 endpoint and bind `brcmfmac`
+- add a G9650 `star2qltechn` DTB target so recovery tests do not keep using the
+  S9/G9600 `starqltechn` identity
+- improve early recovery evidence capture with pstore/ramoops-oriented bootargs
 - defer Broadcom Bluetooth board modeling until Wi-Fi PCIe enumeration has boot
   evidence
 
@@ -43,6 +47,10 @@ Patch stored in this control repo:
 
 - `patches/mainline/0001-g9650-bcm4361-pcie-wifi-bringup.patch`
 
+The patch now includes the recovery debug DTB update documented in:
+
+- `docs/mainline-star2qltechn-recovery-debug-build-20260704.md`
+
 ## Evidence Used
 
 Live device evidence from the working Android boot:
@@ -71,8 +79,10 @@ Samsung downstream DTS evidence:
 
 ## Patch Summary
 
-The patch changes 5 files:
+The patch changes 7 files:
 
+- `arch/arm64/boot/dts/qcom/Makefile`
+- `arch/arm64/boot/dts/qcom/sdm845-samsung-star2qltechn.dts`
 - `arch/arm64/boot/dts/qcom/sdm845-samsung-starqltechn.dts`
 - `arch/arm64/configs/sdm845.config`
 - `drivers/net/wireless/broadcom/brcm80211/include/brcm_hw_ids.h`
@@ -90,6 +100,9 @@ DTS changes:
 
 Config changes:
 
+- `CONFIG_PRINTK_TIME=y`
+- `CONFIG_MAGIC_SYSRQ=y`
+- `CONFIG_SERIAL_EARLYCON=y`
 - `CONFIG_BRCMFMAC=m`
 - `CONFIG_BRCMFMAC_PCIE=y`
 
@@ -101,7 +114,29 @@ brcmfmac changes:
 - group BCM4361 with the BCM4359 TCM rambase/save-restore handling as a first
   boot-test assumption
 
-## Build Result
+## Current Image/DTB Build Result
+
+Latest fast recovery-debug build record:
+
+- `analysis/mainline-kernel-build-20260704-113151`
+
+Fast image/DTB command:
+
+```sh
+RUN_DOCKER=1 scripts/kernel/build-mainline-sdm845-kernel.sh
+```
+
+Outputs:
+
+| Artifact | SHA256 |
+| --- | --- |
+| `arch/arm64/boot/Image.gz` | `806b7c9d2bdae39459e2b2d52af0da33b5e1d2db7f7b12cf54143f4717a2c891` |
+| `arch/arm64/boot/Image` | `70df6db4a5e40c463675114cfea262c450d46616ab113f49925cb406b6691eea` |
+| `arch/arm64/boot/dts/qcom/sdm845-samsung-star2qltechn.dtb` | `98c8a7a2ad4f13b334f716cf66c5596b3d01d44662970f7296f0d3f261242d22` |
+
+The final incremental build log had no `warning:`, `error:`, or `fatal:` lines.
+
+## Earlier Module Build Result
 
 Build record:
 
@@ -178,7 +213,9 @@ Log notes:
 
 ## Boot-Test Expectations
 
-The next boot test should answer these questions in order:
+The next recovery boot test should first answer whether the bootloader enters
+the mainline kernel with the new `star2qltechn` DTB. If it does, the Wi-Fi test
+should answer these questions in order:
 
 1. Does `&pcie0` link train?
 2. Does Linux enumerate the Broadcom endpoint as `14e4:441f`?
@@ -202,10 +239,11 @@ rights are clear.
 
 Next practical steps:
 
-- boot the patched `Image.gz` plus `sdm845-samsung-starqltechn.dtb` with the
-  built module tree available
+- boot the patched `Image.gz` plus `sdm845-samsung-star2qltechn.dtb`
 - collect `dmesg` with `pcie`, `brcmfmac`, `firmware`, `cfg80211`, `rfkill`, and
   `bluetooth` filters
+- if pstore is empty again, stop driver work and test downstream-style multi-DTB
+  append or boot image layout first
 - if PCIe does not enumerate, revisit GPIO99 WLAN enable and PCIe RC0 regulator
   sequencing
 - if PCIe enumerates but firmware fails, prepare a local firmware/NVRAM mapping

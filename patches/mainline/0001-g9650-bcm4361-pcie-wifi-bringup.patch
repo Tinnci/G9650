@@ -1,3 +1,63 @@
+diff --git a/arch/arm64/boot/dts/qcom/Makefile b/arch/arm64/boot/dts/qcom/Makefile
+index 3f810c699..66a916858 100644
+--- a/arch/arm64/boot/dts/qcom/Makefile
++++ b/arch/arm64/boot/dts/qcom/Makefile
+@@ -251,6 +251,7 @@ dtb-$(CONFIG_ARCH_QCOM)	+= sdm845-lg-judyp.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sdm845-mtp.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sdm845-oneplus-enchilada.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sdm845-oneplus-fajita.dtb
++dtb-$(CONFIG_ARCH_QCOM)	+= sdm845-samsung-star2qltechn.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sdm845-samsung-starqltechn.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sdm845-sony-xperia-tama-akari.dtb
+ dtb-$(CONFIG_ARCH_QCOM)	+= sdm845-sony-xperia-tama-akatsuki.dtb
+diff --git a/arch/arm64/boot/dts/qcom/sdm845-samsung-star2qltechn.dts b/arch/arm64/boot/dts/qcom/sdm845-samsung-star2qltechn.dts
+new file mode 100644
+index 000000000..b6b5ac90d
+--- /dev/null
++++ b/arch/arm64/boot/dts/qcom/sdm845-samsung-star2qltechn.dts
+@@ -0,0 +1,42 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Samsung Galaxy S9+ SM-G9650 (star2qltechn) debug DTB.
++ *
++ * This intentionally reuses the current starqltechn mainline board description,
++ * then overrides the identity and downstream Qualcomm/Samsung bootloader match
++ * fields observed in the known-good Samsung recovery kernel blob.
++ */
++
++/dts-v1/;
++
++#include "sdm845-samsung-starqltechn.dts"
++
++/ {
++	model = "Samsung Galaxy S9+ SM-G9650";
++	compatible = "samsung,star2qltechn", "samsung,starqltechn", "qcom,sdm845";
++
++	/*
++	 * Downstream STAR2QLTE CHN recovery DTBs use msm-id 0x141 with these
++	 * platform variants, and board-id 8 with revisions 2 through 14.
++	 */
++	qcom,msm-id = <0x141 0x10000>,
++		      <0x141 0x20000>,
++		      <0x141 0x20001>;
++	qcom,board-id = <0x8 0x2>,
++			<0x8 0x3>,
++			<0x8 0x4>,
++			<0x8 0x5>,
++			<0x8 0x6>,
++			<0x8 0x7>,
++			<0x8 0x8>,
++			<0x8 0x9>,
++			<0x8 0xa>,
++			<0x8 0xb>,
++			<0x8 0xc>,
++			<0x8 0xd>,
++			<0x8 0xe>;
++};
++
++&{/chosen} {
++	bootargs = "ignore_loglevel loglevel=8 initcall_debug printk.time=1 pstore.backend=ramoops ramoops.mem_address=0xa1300000 ramoops.mem_size=0x100000 ramoops.record_size=0x40000 ramoops.console_size=0x40000 ramoops.pmsg_size=0x40000 panic=10 oops=panic";
++};
 diff --git a/arch/arm64/boot/dts/qcom/sdm845-samsung-starqltechn.dts b/arch/arm64/boot/dts/qcom/sdm845-samsung-starqltechn.dts
 index ebe41cc2b..d27aa3f3a 100644
 --- a/arch/arm64/boot/dts/qcom/sdm845-samsung-starqltechn.dts
@@ -82,10 +142,22 @@ index ebe41cc2b..d27aa3f3a 100644
  		pins = "gpio62";
  		function = "gpio";
 diff --git a/arch/arm64/configs/sdm845.config b/arch/arm64/configs/sdm845.config
-index 696a092dc..bb9d5730e 100644
+index 696a092dc..0a12c2817 100644
 --- a/arch/arm64/configs/sdm845.config
 +++ b/arch/arm64/configs/sdm845.config
-@@ -557,7 +557,8 @@ CONFIG_MLX4_EN=n
+@@ -98,6 +98,11 @@ CONFIG_INTERCONNECT_QCOM_OSM_L3=y
+ # Notification LED
+ # Must be builtin as it won't be automatically modprobed
+ CONFIG_LEDS_TRIGGER_PATTERN=y
++
++# G9650 recovery bring-up evidence capture
++CONFIG_PRINTK_TIME=y
++CONFIG_MAGIC_SYSRQ=y
++CONFIG_SERIAL_EARLYCON=y
+ CONFIG_LEDS_CLASS_MULTICOLOR=m
+ CONFIG_LEDS_QCOM_LPG=m
+ CONFIG_I2C_QCOM_GENI=y
+@@ -557,7 +562,8 @@ CONFIG_MLX4_EN=n
  CONFIG_MLX5_CORE=n
  CONFIG_STMMAC_ETH=n
  CONFIG_ATL1C=n

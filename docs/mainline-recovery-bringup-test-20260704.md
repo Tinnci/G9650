@@ -158,3 +158,32 @@ The next useful iteration is not another blind recovery repack. Build a boot-tes
 - Preserve or reproduce downstream appended-DTB layout more closely.
 - Check whether pstore/ramoops captures anything after the failed recovery attempt.
 - Consider building boot-critical display, USB, storage, and input drivers built-in rather than as modules for this recovery bring-up image.
+
+## star2qltechn debug rebuild
+
+This next debug build has now been prepared and compiled:
+
+- build record: `analysis/mainline-kernel-build-20260704-113151`
+- output root: `/Volumes/gts7-android-build/android/kernel-builds/sdm845/out-mainline-star2qltechn`
+- kernel: `arch/arm64/boot/Image.gz`
+- DTB: `arch/arm64/boot/dts/qcom/sdm845-samsung-star2qltechn.dtb`
+- DTB SHA-256: `98c8a7a2ad4f13b334f716cf66c5596b3d01d44662970f7296f0d3f261242d22`
+
+Important correction:
+
+- The failed recovery test used `sdm845-samsung-starqltechn.dtb`, which is the
+  S9/G9600 mainline target.
+- The actual device is S9+/G9650 `star2qltechn`.
+- The new debug DTB advertises `Samsung Galaxy S9+ SM-G9650`,
+  `samsung,star2qltechn`, and the downstream STAR2QLTE CHN `qcom,msm-id` /
+  `qcom,board-id` values seen in the known-good recovery kernel blob.
+
+Current assessment:
+
+- The reason mainline did not reach the target is probably earlier than Wi-Fi,
+  Bluetooth, recovery UI, or Android userspace.
+- Because pstore was empty after the failed test, we do not yet have proof that
+  the bootloader entered the mainline kernel.
+- The next test should use the new `star2qltechn` DTB. If pstore is still empty,
+  the next suspect is image layout or bootloader DTB selection, especially
+  downstream-style multi-DTB append behavior.

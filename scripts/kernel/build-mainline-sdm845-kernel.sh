@@ -14,9 +14,9 @@ KERNEL_BRANCH="${KERNEL_BRANCH:-6.17-wip/starqltechn_latest_patches}"
 KERNEL_NAME="${KERNEL_NAME:-mainline-sdm845-linux-next-starqltechn_latest_patches}"
 HOST_KERNEL_ROOT="${HOST_KERNEL_ROOT:-$DOCKER_BUILD_ROOT/android/kernel-builds/sdm845}"
 HOST_KERNEL_SRC="${HOST_KERNEL_SRC:-$HOST_KERNEL_ROOT/$KERNEL_NAME}"
-HOST_KERNEL_OUT="${HOST_KERNEL_OUT:-$HOST_KERNEL_ROOT/out-mainline-starqltechn}"
+HOST_KERNEL_OUT="${HOST_KERNEL_OUT:-$HOST_KERNEL_ROOT/out-mainline-star2qltechn}"
 CONTAINER_KERNEL_SRC="${CONTAINER_KERNEL_SRC:-$CONTAINER_BUILD_ROOT/android/kernel-builds/sdm845/$KERNEL_NAME}"
-CONTAINER_KERNEL_OUT="${CONTAINER_KERNEL_OUT:-$CONTAINER_BUILD_ROOT/android/kernel-builds/sdm845/out-mainline-starqltechn}"
+CONTAINER_KERNEL_OUT="${CONTAINER_KERNEL_OUT:-$CONTAINER_BUILD_ROOT/android/kernel-builds/sdm845/out-mainline-star2qltechn}"
 
 CLONE_KERNEL="${CLONE_KERNEL:-0}"
 FETCH_KERNEL="${FETCH_KERNEL:-0}"
@@ -27,7 +27,7 @@ USE_LLVM="${USE_LLVM:-1}"
 JOBS="${JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || printf '4')}"
 CONFIG_FRAGMENT="${CONFIG_FRAGMENT:-arch/arm64/configs/sdm845.config}"
 DISABLE_LOCALVERSION_AUTO="${DISABLE_LOCALVERSION_AUTO:-1}"
-DTB_TARGET="${DTB_TARGET:-qcom/sdm845-samsung-starqltechn.dtb}"
+DTB_TARGET="${DTB_TARGET:-qcom/sdm845-samsung-star2qltechn.dtb}"
 BUILD_ALL_DTBS="${BUILD_ALL_DTBS:-0}"
 BUILD_MODULES="${BUILD_MODULES:-0}"
 if [ "${TARGETS+set}" != "set" ]; then
@@ -129,11 +129,11 @@ Clone the latest selected mainline branch to the T5 and build:
 
   CLONE_KERNEL=1 RUN_DOCKER=1 $0
 
-Build the full arm64 DTB set instead of the fast starqltechn DTB target:
+Build the full arm64 DTB set instead of the fast star2qltechn DTB target:
 
   BUILD_ALL_DTBS=1 CLONE_KERNEL=1 RUN_DOCKER=1 $0
 
-Build the fast starqltechn image/DTB plus modules:
+Build the fast star2qltechn image/DTB plus modules:
 
   BUILD_MODULES=1 RUN_DOCKER=1 $0
 
@@ -244,7 +244,7 @@ make "${make_args[@]}" -j"$JOBS" $TARGETS 2>&1 | tee "$LOG_DIR/build.log"
 
 boot_dir="$KERNEL_OUT/arch/arm64/boot"
 {
-    for artifact in "$boot_dir/Image.gz" "$boot_dir/Image" "$boot_dir/dts/qcom/sdm845-samsung-starqltechn.dtb"; do
+    for artifact in "$boot_dir/Image.gz" "$boot_dir/Image" "$boot_dir/dts/$DTB_TARGET"; do
         if [ -f "$artifact" ]; then
             sha256_file "$artifact"
         fi
