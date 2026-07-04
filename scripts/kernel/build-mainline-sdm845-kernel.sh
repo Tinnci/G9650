@@ -26,7 +26,16 @@ DRY_RUN="${DRY_RUN:-0}"
 USE_LLVM="${USE_LLVM:-1}"
 JOBS="${JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || printf '4')}"
 CONFIG_FRAGMENT="${CONFIG_FRAGMENT:-arch/arm64/configs/sdm845.config}"
-TARGETS="${TARGETS:-Image.gz dtbs}"
+DISABLE_LOCALVERSION_AUTO="${DISABLE_LOCALVERSION_AUTO:-1}"
+DTB_TARGET="${DTB_TARGET:-qcom/sdm845-samsung-starqltechn.dtb}"
+BUILD_ALL_DTBS="${BUILD_ALL_DTBS:-0}"
+if [ "${TARGETS+set}" != "set" ]; then
+    if [ "$BUILD_ALL_DTBS" = "1" ]; then
+        TARGETS="Image.gz dtbs"
+    else
+        TARGETS="Image.gz $DTB_TARGET"
+    fi
+fi
 STAMP="${STAMP:-$(date -u '+%Y%m%d-%H%M%S')}"
 LOG_DIR="${LOG_DIR:-$ROOT_DIR/analysis/mainline-kernel-build-$STAMP}"
 
@@ -35,6 +44,14 @@ need() {
         printf 'Missing required command: %s\n' "$1" >&2
         exit 1
     fi
+}
+
+print_shell_command() {
+    printf '%q' "$1"
+    shift
+    for arg in "$@"; do
+        printf ' %q' "$arg"
+    done
 }
 
 sha256_file() {
@@ -66,6 +83,9 @@ print_config() {
     printf 'use_llvm=%s\n' "$USE_LLVM"
     printf 'jobs=%s\n' "$JOBS"
     printf 'config_fragment=%s\n' "$CONFIG_FRAGMENT"
+    printf 'disable_localversion_auto=%s\n' "$DISABLE_LOCALVERSION_AUTO"
+    printf 'dtb_target=%s\n' "$DTB_TARGET"
+    printf 'build_all_dtbs=%s\n' "$BUILD_ALL_DTBS"
     printf 'targets=%s\n' "$TARGETS"
     printf 'log_dir=%s\n' "$LOG_DIR"
 }
@@ -103,6 +123,10 @@ Build or refresh the reusable Docker image:
 Clone the latest selected mainline branch to the T5 and build:
 
   CLONE_KERNEL=1 RUN_DOCKER=1 $0
+
+Build the full arm64 DTB set instead of the fast starqltechn DTB target:
+
+  BUILD_ALL_DTBS=1 CLONE_KERNEL=1 RUN_DOCKER=1 $0
 
 Reuse an existing checkout, fetch the selected branch, and build:
 
@@ -148,7 +172,7 @@ if [ "$RUN_DOCKER" = "1" ]; then
         -v "$DOCKER_BUILD_ROOT:$CONTAINER_BUILD_ROOT" \
         -v "$ROOT_DIR:/workspace/g9650" \
         "$DOCKER_IMAGE" \
-        bash -lc "set -euo pipefail; cd /workspace/g9650; KERNEL_SRC=$CONTAINER_KERNEL_SRC KERNEL_OUT=$CONTAINER_KERNEL_OUT USE_LLVM=$USE_LLVM JOBS=$JOBS CONFIG_FRAGMENT=$CONFIG_FRAGMENT TARGETS=\"$TARGETS\" LOG_DIR=/workspace/g9650/analysis/mainline-kernel-build-$STAMP RUN_DOCKER=0 ./scripts/kernel/build-mainline-sdm845-kernel.sh"
+        bash -lc "set -euo pipefail; cd /workspace/g9650; KERNEL_SRC=$CONTAINER_KERNEL_SRC KERNEL_OUT=$CONTAINER_KERNEL_OUT USE_LLVM=$USE_LLVM JOBS=$JOBS CONFIG_FRAGMENT=$CONFIG_FRAGMENT DISABLE_LOCALVERSION_AUTO=$DISABLE_LOCALVERSION_AUTO DTB_TARGET=$DTB_TARGET BUILD_ALL_DTBS=$BUILD_ALL_DTBS TARGETS=\"$TARGETS\" LOG_DIR=/workspace/g9650/analysis/mainline-kernel-build-$STAMP RUN_DOCKER=0 ./scripts/kernel/build-mainline-sdm845-kernel.sh"
 fi
 
 KERNEL_SRC="${KERNEL_SRC:-$CONTAINER_KERNEL_SRC}"
@@ -175,12 +199,15 @@ fi
     printf 'date=%s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
     printf 'kernel_head=%s\n' "$(git -C "$KERNEL_SRC" rev-parse HEAD 2>/dev/null || true)"
     printf 'kernel_branch=%s\n' "$(git -C "$KERNEL_SRC" rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
-    printf 'make_defconfig=make %q ' "${make_args[@]}"
-    printf 'defconfig\n'
+    printf 'make_defconfig='
+    print_shell_command make "${make_args[@]}" defconfig
+    printf '\n'
     printf 'config_fragment=%s\n' "$CONFIG_FRAGMENT"
-    printf 'make_targets=make %q ' "${make_args[@]}"
-    printf -- '-j%q ' "$JOBS"
-    printf '%s\n' "$TARGETS"
+    printf 'disable_localversion_auto=%s\n' "$DISABLE_LOCALVERSION_AUTO"
+    printf 'make_targets='
+    # shellcheck disable=SC2086
+    print_shell_command make "${make_args[@]}" -j"$JOBS" $TARGETS
+    printf '\n'
 } > "$LOG_DIR/session.txt"
 
 make "${make_args[@]}" defconfig 2>&1 | tee "$LOG_DIR/defconfig.log"
@@ -192,6 +219,12 @@ if [ -f "$fragment_path" ]; then
         -O "$KERNEL_OUT" \
         "$KERNEL_OUT/.config" \
         "$fragment_path" 2>&1 | tee "$LOG_DIR/merge-config.log"
+
+    if [ "$DISABLE_LOCALVERSION_AUTO" = "1" ]; then
+        "$KERNEL_SRC/scripts/config" \
+            --file "$KERNEL_OUT/.config" \
+            --disable LOCALVERSION_AUTO
+    fi
     make "${make_args[@]}" olddefconfig 2>&1 | tee "$LOG_DIR/olddefconfig.log"
 else
     printf 'Config fragment not found, continuing with defconfig only: %s\n' "$fragment_path" | tee "$LOG_DIR/merge-config.log"

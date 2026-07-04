@@ -31,3 +31,21 @@ Run a dry check:
 ```sh
 DRY_RUN=1 scripts/kernel/build-mainline-sdm845-kernel.sh
 ```
+
+Build the selected mainline branch on the T5:
+
+```sh
+CLONE_KERNEL=1 RUN_DOCKER=1 scripts/kernel/build-mainline-sdm845-kernel.sh
+```
+
+The default target is optimized for G9650 iteration and builds `Image.gz` plus
+`qcom/sdm845-samsung-starqltechn.dtb`. Use `BUILD_ALL_DTBS=1` when the full
+arm64 DTB set is needed.
+
+First successful mainline build:
+
+- branch: `6.17-wip/starqltechn_latest_patches`
+- head: `f1b20714332646073d4f54190c271917c6da32fa`
+- build record: `analysis/mainline-kernel-build-20260704-070427`
+- `Image.gz` sha256: `a6afc0b24a1b01f7a239ede43054ecf645404d3c5e795e899f93f0402ce7f8e0`
+- `sdm845-samsung-starqltechn.dtb` sha256: `0911308a1ae8b3096875178f8685ea25f7da2d7aed949f5a7fc27ccfd1e09301`

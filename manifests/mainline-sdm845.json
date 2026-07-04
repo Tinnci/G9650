@@ -28,15 +28,61 @@
       "merge arch/arm64/configs/sdm845.config",
       "olddefconfig"
     ],
+    "disable_localversion_auto": true,
     "targets": [
+      "Image.gz",
+      "qcom/sdm845-samsung-starqltechn.dtb"
+    ],
+    "full_dtb_target": "dtbs",
+    "build_all_dtbs_env": "BUILD_ALL_DTBS=1",
+    "expected_dtb": "arch/arm64/boot/dts/qcom/sdm845-samsung-starqltechn.dtb"
+  },
+  "latest_successful_build": {
+    "record": "analysis/mainline-kernel-build-20260704-070427",
+    "date_utc": "2026-07-04T07:08:48Z",
+    "branch": "6.17-wip/starqltechn_latest_patches",
+    "head": "f1b20714332646073d4f54190c271917c6da32fa",
+    "command": "CLONE_KERNEL=1 RUN_DOCKER=1 scripts/kernel/build-mainline-sdm845-kernel.sh",
+    "actual_targets": [
       "Image.gz",
       "dtbs"
     ],
-    "expected_dtb": "arch/arm64/boot/dts/qcom/sdm845-samsung-starqltechn.dtb"
+    "output_root": "/Volumes/gts7-android-build/android/kernel-builds/sdm845/out-mainline-starqltechn",
+    "artifacts": [
+      {
+        "path": "arch/arm64/boot/Image.gz",
+        "size_bytes": 15150013,
+        "sha256": "a6afc0b24a1b01f7a239ede43054ecf645404d3c5e795e899f93f0402ce7f8e0"
+      },
+      {
+        "path": "arch/arm64/boot/Image",
+        "size_bytes": 40614400,
+        "sha256": "886102905a02f604612cb42fb4d5829fab115f86d5103d3f62465d57d137318a"
+      },
+      {
+        "path": "arch/arm64/boot/dts/qcom/sdm845-samsung-starqltechn.dtb",
+        "size_bytes": 112014,
+        "sha256": "0911308a1ae8b3096875178f8685ea25f7da2d7aed949f5a7fc27ccfd1e09301"
+      }
+    ],
+    "log_summary": {
+      "build_log_lines": 5040,
+      "merge_config_log_lines": 3701,
+      "dtb_file_count": 351,
+      "warnings": 6,
+      "errors": 0,
+      "fatal_errors": 0
+    },
+    "wireless_status": {
+      "pcie_qcom": "enabled",
+      "bluetooth_bcm_uart": "enabled as module path",
+      "broadcom_wifi_driver": "not enabled; CONFIG_BRCMFMAC is not set"
+    }
   },
   "notes": [
     "Use the 6.17 WIP branch as the modern compile target.",
     "Keep full kernel checkouts and build output outside this git repo.",
+    "The first successful build used full dtbs. The wrapper now defaults to the faster starqltechn DTB target for iteration.",
     "BCM4361 Wi-Fi and Broadcom Bluetooth remain a separate narrow porting track."
   ]
 }

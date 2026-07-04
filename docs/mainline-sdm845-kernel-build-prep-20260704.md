@@ -56,7 +56,11 @@ Default build behavior:
 - clone depth: `80`
 - config flow: `defconfig`, merge `arch/arm64/configs/sdm845.config`,
   then `olddefconfig`
-- targets: `Image.gz dtbs`
+- default targets: `Image.gz qcom/sdm845-samsung-starqltechn.dtb`
+- full DTB target: set `BUILD_ALL_DTBS=1` to build `Image.gz dtbs`
+- `CONFIG_LOCALVERSION_AUTO` is disabled by the wrapper after config merge for
+  future builds, because the first build showed slow `git status` checks in
+  `scripts/setlocalversion` on the T5 checkout.
 
 Verified builder tools:
 
@@ -86,6 +90,12 @@ Clone and build the latest selected branch:
 CLONE_KERNEL=1 RUN_DOCKER=1 scripts/kernel/build-mainline-sdm845-kernel.sh
 ```
 
+Build the full arm64 DTB set:
+
+```sh
+BUILD_ALL_DTBS=1 CLONE_KERNEL=1 RUN_DOCKER=1 scripts/kernel/build-mainline-sdm845-kernel.sh
+```
+
 Fetch and rebuild an existing checkout:
 
 ```sh
@@ -101,6 +111,62 @@ CLONE_KERNEL=1 \
 RUN_DOCKER=1 \
 scripts/kernel/build-mainline-sdm845-kernel.sh
 ```
+
+## First successful build
+
+Build record:
+
+- `analysis/mainline-kernel-build-20260704-070427`
+
+Command:
+
+```sh
+CLONE_KERNEL=1 RUN_DOCKER=1 scripts/kernel/build-mainline-sdm845-kernel.sh
+```
+
+Actual first-run targets:
+
+- `Image.gz`
+- `dtbs`
+
+Artifacts under
+`/Volumes/gts7-android-build/android/kernel-builds/sdm845/out-mainline-starqltechn`:
+
+- `arch/arm64/boot/Image.gz`
+  - size: `15150013`
+  - sha256: `a6afc0b24a1b01f7a239ede43054ecf645404d3c5e795e899f93f0402ce7f8e0`
+- `arch/arm64/boot/Image`
+  - size: `40614400`
+  - sha256: `886102905a02f604612cb42fb4d5829fab115f86d5103d3f62465d57d137318a`
+- `arch/arm64/boot/dts/qcom/sdm845-samsung-starqltechn.dtb`
+  - size: `112014`
+  - sha256: `0911308a1ae8b3096875178f8685ea25f7da2d7aed949f5a7fc27ccfd1e09301`
+
+Log summary:
+
+- `build.log`: `5040` lines
+- `merge-config.log`: `3701` lines
+- generated DTB list: `351` files
+- warnings: `6`
+- errors: `0`
+- fatal errors: `0`
+
+Warnings were limited to unused variables in DRM panel drivers:
+
+- `panel-lg-sw43408.c`
+- `panel-samsung-s6e3ha8.c`
+
+Important config observations from the first build:
+
+- `CONFIG_PCIE_QCOM=y`
+- `CONFIG_BT_BCM=m`
+- `CONFIG_BT_HCIUART=m`
+- `CONFIG_BT_HCIUART_BCM=y`
+- `CONFIG_WLAN_VENDOR_BROADCOM=y`
+- `CONFIG_BRCMFMAC` is not set
+
+This means the modern mainline branch now compiles for the device target, but it
+does not yet include a working Broadcom BCM4361 Wi-Fi driver path.
 
 ## Wireless follow-up
 
