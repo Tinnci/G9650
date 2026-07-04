@@ -1,0 +1,107 @@
+name: Import SDM845 Linux Next Snapshot
+
+on:
+  workflow_dispatch:
+    inputs:
+      upstream_repo:
+        description: Git upstream to import
+        required: true
+        default: https://gitlab.com/dsankouski/sdm845-linux-next.git
+      upstream_branch:
+        description: Upstream branch to import
+        required: true
+        default: 6.17-wip/starqltechn_latest_patches
+      patch_url:
+        description: Patch URL to apply for the G9650 snapshot
+        required: true
+        default: https://raw.githubusercontent.com/Tinnci/G9650/main/patches/mainline/0001-g9650-bcm4361-pcie-wifi-bringup.patch
+      base_snapshot_branch:
+        description: Branch for the unmodified upstream root snapshot
+        required: true
+        default: upstream-starqltechn-latest-snapshot
+      g9650_snapshot_branch:
+        description: Branch for the patched G9650 root snapshot
+        required: true
+        default: g9650-bcm4361-bringup-snapshot
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Import upstream and publish snapshots
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UPSTREAM_REPO: ${{ inputs.upstream_repo }}
+          UPSTREAM_BRANCH: ${{ inputs.upstream_branch }}
+          PATCH_URL: ${{ inputs.patch_url }}
+          BASE_SNAPSHOT_BRANCH: ${{ inputs.base_snapshot_branch }}
+          G9650_SNAPSHOT_BRANCH: ${{ inputs.g9650_snapshot_branch }}
+        run: |
+          set -euo pipefail
+
+          git config --global user.name "Tinnci"
+          git config --global user.email "23432137+Tinnci@users.noreply.github.com"
+
+          git clone --depth 1 --branch "$UPSTREAM_BRANCH" "$UPSTREAM_REPO" work
+          cd work
+
+          upstream_head="$(git rev-parse HEAD)"
+          upstream_title="$(git log -1 --format=%s)"
+
+          base_commit="$(
+            GIT_AUTHOR_NAME=Tinnci \
+            GIT_AUTHOR_EMAIL=23432137+Tinnci@users.noreply.github.com \
+            GIT_COMMITTER_NAME=Tinnci \
+            GIT_COMMITTER_EMAIL=23432137+Tinnci@users.noreply.github.com \
+            git commit-tree HEAD^{tree} <<EOF
+          Import upstream SDM845 Linux snapshot
+
+          Upstream: $UPSTREAM_REPO
+          Branch: $UPSTREAM_BRANCH
+          Head: $upstream_head
+          Title: $upstream_title
+          EOF
+          )"
+
+          git push \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            "$base_commit:refs/heads/$BASE_SNAPSHOT_BRANCH"
+
+          curl -fsSL "$PATCH_URL" -o /tmp/g9650-bcm4361.patch
+          git apply --check /tmp/g9650-bcm4361.patch
+          git apply /tmp/g9650-bcm4361.patch
+
+          git add -A
+          patched_tree="$(git write-tree)"
+          patched_commit="$(
+            GIT_AUTHOR_NAME=Tinnci \
+            GIT_AUTHOR_EMAIL=23432137+Tinnci@users.noreply.github.com \
+            GIT_COMMITTER_NAME=Tinnci \
+            GIT_COMMITTER_EMAIL=23432137+Tinnci@users.noreply.github.com \
+            git commit-tree "$patched_tree" <<EOF
+          Import G9650 BCM4361 mainline snapshot
+
+          Upstream: $UPSTREAM_REPO
+          Branch: $UPSTREAM_BRANCH
+          Head: $upstream_head
+          Title: $upstream_title
+          Patch: $PATCH_URL
+          EOF
+          )"
+
+          git push \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            "$patched_commit:refs/heads/$G9650_SNAPSHOT_BRANCH"
+
+          {
+            echo "## Imported snapshots"
+            echo
+            echo "- upstream head: \`$upstream_head\`"
+            echo "- upstream title: $upstream_title"
+            echo "- base snapshot: \`$BASE_SNAPSHOT_BRANCH\` -> \`$base_commit\`"
+            echo "- G9650 snapshot: \`$G9650_SNAPSHOT_BRANCH\` -> \`$patched_commit\`"
+          } >> "$GITHUB_STEP_SUMMARY"
