@@ -58,6 +58,7 @@ Default build behavior:
   then `olddefconfig`
 - default targets: `Image.gz qcom/sdm845-samsung-starqltechn.dtb`
 - full DTB target: set `BUILD_ALL_DTBS=1` to build `Image.gz dtbs`
+- module target: set `BUILD_MODULES=1` to append `modules`
 - `CONFIG_LOCALVERSION_AUTO` is disabled by the wrapper after config merge for
   future builds, because the first build showed slow `git status` checks in
   `scripts/setlocalversion` on the T5 checkout.
@@ -94,6 +95,12 @@ Build the full arm64 DTB set:
 
 ```sh
 BUILD_ALL_DTBS=1 CLONE_KERNEL=1 RUN_DOCKER=1 scripts/kernel/build-mainline-sdm845-kernel.sh
+```
+
+Build the fast G9650 image/DTB plus modules:
+
+```sh
+BUILD_MODULES=1 RUN_DOCKER=1 scripts/kernel/build-mainline-sdm845-kernel.sh
 ```
 
 Fetch and rebuild an existing checkout:

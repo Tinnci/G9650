@@ -29,11 +29,15 @@ CONFIG_FRAGMENT="${CONFIG_FRAGMENT:-arch/arm64/configs/sdm845.config}"
 DISABLE_LOCALVERSION_AUTO="${DISABLE_LOCALVERSION_AUTO:-1}"
 DTB_TARGET="${DTB_TARGET:-qcom/sdm845-samsung-starqltechn.dtb}"
 BUILD_ALL_DTBS="${BUILD_ALL_DTBS:-0}"
+BUILD_MODULES="${BUILD_MODULES:-0}"
 if [ "${TARGETS+set}" != "set" ]; then
     if [ "$BUILD_ALL_DTBS" = "1" ]; then
         TARGETS="Image.gz dtbs"
     else
         TARGETS="Image.gz $DTB_TARGET"
+    fi
+    if [ "$BUILD_MODULES" = "1" ]; then
+        TARGETS="$TARGETS modules"
     fi
 fi
 STAMP="${STAMP:-$(date -u '+%Y%m%d-%H%M%S')}"
@@ -86,6 +90,7 @@ print_config() {
     printf 'disable_localversion_auto=%s\n' "$DISABLE_LOCALVERSION_AUTO"
     printf 'dtb_target=%s\n' "$DTB_TARGET"
     printf 'build_all_dtbs=%s\n' "$BUILD_ALL_DTBS"
+    printf 'build_modules=%s\n' "$BUILD_MODULES"
     printf 'targets=%s\n' "$TARGETS"
     printf 'log_dir=%s\n' "$LOG_DIR"
 }
@@ -127,6 +132,10 @@ Clone the latest selected mainline branch to the T5 and build:
 Build the full arm64 DTB set instead of the fast starqltechn DTB target:
 
   BUILD_ALL_DTBS=1 CLONE_KERNEL=1 RUN_DOCKER=1 $0
+
+Build the fast starqltechn image/DTB plus modules:
+
+  BUILD_MODULES=1 RUN_DOCKER=1 $0
 
 Reuse an existing checkout, fetch the selected branch, and build:
 
@@ -172,7 +181,7 @@ if [ "$RUN_DOCKER" = "1" ]; then
         -v "$DOCKER_BUILD_ROOT:$CONTAINER_BUILD_ROOT" \
         -v "$ROOT_DIR:/workspace/g9650" \
         "$DOCKER_IMAGE" \
-        bash -lc "set -euo pipefail; cd /workspace/g9650; KERNEL_SRC=$CONTAINER_KERNEL_SRC KERNEL_OUT=$CONTAINER_KERNEL_OUT USE_LLVM=$USE_LLVM JOBS=$JOBS CONFIG_FRAGMENT=$CONFIG_FRAGMENT DISABLE_LOCALVERSION_AUTO=$DISABLE_LOCALVERSION_AUTO DTB_TARGET=$DTB_TARGET BUILD_ALL_DTBS=$BUILD_ALL_DTBS TARGETS=\"$TARGETS\" LOG_DIR=/workspace/g9650/analysis/mainline-kernel-build-$STAMP RUN_DOCKER=0 ./scripts/kernel/build-mainline-sdm845-kernel.sh"
+        bash -lc "set -euo pipefail; cd /workspace/g9650; KERNEL_SRC=$CONTAINER_KERNEL_SRC KERNEL_OUT=$CONTAINER_KERNEL_OUT USE_LLVM=$USE_LLVM JOBS=$JOBS CONFIG_FRAGMENT=$CONFIG_FRAGMENT DISABLE_LOCALVERSION_AUTO=$DISABLE_LOCALVERSION_AUTO DTB_TARGET=$DTB_TARGET BUILD_ALL_DTBS=$BUILD_ALL_DTBS BUILD_MODULES=$BUILD_MODULES TARGETS=\"$TARGETS\" LOG_DIR=/workspace/g9650/analysis/mainline-kernel-build-$STAMP RUN_DOCKER=0 ./scripts/kernel/build-mainline-sdm845-kernel.sh"
 fi
 
 KERNEL_SRC="${KERNEL_SRC:-$CONTAINER_KERNEL_SRC}"
@@ -243,6 +252,25 @@ boot_dir="$KERNEL_OUT/arch/arm64/boot"
 } | tee "$LOG_DIR/SHA256SUMS"
 
 find "$boot_dir/dts" -name '*.dtb' -type f -print 2>/dev/null | sort > "$LOG_DIR/dtb-files.txt" || true
+
+find "$KERNEL_OUT" -name '*.ko' -type f -print 2>/dev/null | sort > "$LOG_DIR/module-files.txt" || true
+
+if [ "$BUILD_MODULES" = "1" ]; then
+    {
+        for artifact in \
+            "$KERNEL_OUT/drivers/net/wireless/broadcom/brcm80211/brcmfmac/brcmfmac.ko" \
+            "$KERNEL_OUT/drivers/net/wireless/broadcom/brcm80211/brcmutil/brcmutil.ko" \
+            "$KERNEL_OUT/net/wireless/cfg80211.ko" \
+            "$KERNEL_OUT/net/mac80211/mac80211.ko" \
+            "$KERNEL_OUT/net/rfkill/rfkill.ko" \
+            "$KERNEL_OUT/drivers/bluetooth/hci_uart.ko" \
+            "$KERNEL_OUT/drivers/bluetooth/btbcm.ko"; do
+            if [ -f "$artifact" ]; then
+                sha256_file "$artifact"
+            fi
+        done
+    } | tee "$LOG_DIR/MODULE_SHA256SUMS"
+fi
 
 if [ ! -f "$boot_dir/Image.gz" ]; then
     printf 'Expected kernel artifact missing: %s\n' "$boot_dir/Image.gz" >&2
